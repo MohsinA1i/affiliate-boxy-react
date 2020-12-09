@@ -31,7 +31,7 @@ export default class Scraper {
 
     constructor({ proxy }: ScraperOptions = {}) {
         this.request = new Request({
-            requestAPIURL: 'https://uwx0k675d0.execute-api.us-east-1.amazonaws.com/Prod/request',
+            requestAPIURL: 'https://s9222iji3e.execute-api.us-east-1.amazonaws.com/Prod/request/',
             proxy: proxy
         });
     }

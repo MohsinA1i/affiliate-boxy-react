@@ -1,3 +1,4 @@
+//import { Auth } from 'aws-amplify';
 import { JSDOM, ResourceLoader, VirtualConsole, ConstructorOptions } from 'jsdom';
 import { CookieJar, Cookie } from 'tough-cookie';
 
@@ -71,10 +72,12 @@ export default class Request {
         options.url = new URL(url);
         options.proxy = this.proxy;
         if (this.requestAPIURL) {
+//            const authenticatedUser = await Auth.currentAuthenticatedUser();
             options.cookies = await this.cookieJar.serialize();
             const APIResponse = await fetch(this.requestAPIURL, {
                 method: 'POST',
                 mode: 'cors',
+//                headers: { 'Authorization': authenticatedUser.signInUserSession.idToken.jwtToken },
                 body: JSON.stringify(options)
             });
             const requestResponse = JSON.parse(await APIResponse.text());
