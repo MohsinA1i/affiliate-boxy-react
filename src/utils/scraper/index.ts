@@ -2,14 +2,27 @@ import Request from './request';
 import regex from './regex';
 
 export interface ScraperOptions {
-    proxy?: string
+    proxy?: string,
+}
+
+export interface Site {
+    url: string,
+    image?: string,
+    pages: {[key: string]: Page},
+    links: {[key: string]: Link}
+}
+
+export interface Page {
+    url: string,
+    site: Site,
+    links: {[key: string]: Link}
 }
 
 export interface Link {
+    url: string,
     store: string,
-    storeURL: string,
-    pageURL: string,
-    count: number
+    site: Site,
+    pages: {[key: string]: Page}
 }
 
 export default class Scraper {
@@ -23,55 +36,59 @@ export default class Scraper {
         });
     }
 
-    async scrapeSite(hostname: string, storeDomains: { [key: string]: string[] }) {
-        hostname = regex.getHostname(hostname);
-        const pages = new Set([`https://${hostname}/`]);
-        const storeLinks: Link[] = [];
+    async scrapeSite(siteDomain: string, storeDomains: { [key: string]: string[] }) {
+        siteDomain = regex.getHostname(siteDomain);
+        const siteUrl = `https://${siteDomain}/`;
+        const site: Site = { url: siteUrl, pages: {}, links: {} };
+        const page: Page = { url: siteUrl, site: site, links: {} }
+        site.pages[siteUrl] = page;
         return new Promise((resolve) => {
             const functionManager = new FunctionManager(this.scrapePage, this)
-                .then(() => { resolve(storeLinks) })
+                .then(() => { resolve(site) })
                 .catch((error) => { if (this.onError) this.onError(error) });
-            functionManager.execute(`https://${hostname}/`, hostname, storeDomains, storeLinks, pages, this.request);
+            functionManager.execute(page, siteDomain, storeDomains, site);
         });
     }
 
     async scrapePage(
-        url: string,
-        hostname: string,
+        page: Page,
+        siteDomain: string,
         storeDomains: { [key: string]: string[] },
-        storeLinks: Link[],
-        pages: Set<string>, request: Request,
+        site: Site,
         functionManager: FunctionManager,
     ) {
-        const dom = await this.dom(url);
-        const links: {[key: string]: Link} = {};
+        const dom = await this.dom(page.url);
         for (const anchorElement of Array.from(dom.window.document.links)) {
-            if (anchorElement.hostname === hostname) {
-                const url = `${anchorElement.origin}${anchorElement.pathname}`;
-                if (!pages.has(url)) {
-                    pages.add(url);
-                    functionManager.execute(url, hostname, storeDomains, storeLinks, pages, request);
+            if (anchorElement.hostname === siteDomain) {
+                const pageURL = `${anchorElement.origin}${anchorElement.pathname}`;
+                const page = site.pages[pageURL];
+                if (!page) { //Page does not exist
+                    //Add page to site
+                    const page: Page = { url: pageURL, site: site, links: {} }
+                    site.pages[pageURL] = page;
+                    functionManager.execute(page, siteDomain, storeDomains, site);
                 }
             } else {
-                for (const store in storeDomains) {
-                    const domains = storeDomains[store];
-                    for (const domain of domains) {
-                        if (anchorElement.hostname === domain) {
-                            const storeURL = `${anchorElement.origin}${anchorElement.pathname}`;
-                            const link = links[storeURL];
-                            if (link) link.count++;
-                            else links[storeURL] = {
-                                store: store,
-                                storeURL: storeURL,
-                                pageURL: url,
-                                count: 1
-                            };
+                for (const storeName in storeDomains) {
+                    for (const storeDomain of storeDomains[storeName]) {
+                        if (anchorElement.hostname === storeDomain) {
+                            const linkURL = `${anchorElement.origin}${anchorElement.pathname}`;
+                            let link = site.links[linkURL];
+                            if (!link) { //Link does not exist
+                                link = { url: linkURL, store: storeName, site: site, pages: {} };
+                                link.pages[page.url] = page;
+                                //Add Link to site and page
+                                site.links[linkURL] = link;
+                                page.links[linkURL] = link;
+                            } else { //Link exists in site
+                                //Add link to page overwrite if exists
+                                page.links[linkURL] = link;
+                            }
                         }
                     }
                 }
             }
         }
-        for (const link of Object.values(links)) storeLinks.push(link);
     }
 
     async dom(url: string) {

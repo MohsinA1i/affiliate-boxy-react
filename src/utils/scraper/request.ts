@@ -1,25 +1,26 @@
+import { Auth } from 'aws-amplify';
 import { JSDOM, ResourceLoader, VirtualConsole, ConstructorOptions } from 'jsdom';
 import { CookieJar, Cookie } from 'tough-cookie';
 
 export interface RequestOptions {
-    headers?: { [key: string]: string };
-    userAgent?: string;
-    hostname?: string;
-    proxy?: string;
-    requestAPIURL?: string;
+    headers?: { [key: string]: string },
+    userAgent?: string,
+    hostname?: string,
+    proxy?: string,
+    requestAPIURL?: string,
 }
 
 export interface DomOptions {
-    location?: string;
-    url?: string;
-    content?: string;
-    runScripts?: 'outside-only' | 'dangerously';
+    location?: string,
+    url?: string,
+    content?: string,
+    runScripts?: 'outside-only' | 'dangerously',
 }
 
 export interface Response {
-    url: string;
-    type: string;
-    body: any;
+    url: string,
+    type: string,
+    body: any,
 }
 
 export default class Request {
@@ -71,10 +72,17 @@ export default class Request {
         options.url = new URL(url);
         options.proxy = this.proxy;
         if (this.requestAPIURL) {
+            /*const authenticatedUser = await Auth.currentAuthenticatedUser();
+            const session = await Auth.currentSession();
+            const credentials = await Auth.currentUserCredentials();
+            const info = await Auth.currentUserInfo();*/
             options.cookies = await this.cookieJar.serialize();
             const APIResponse = await fetch(this.requestAPIURL, {
                 method: 'POST',
                 mode: 'cors',
+                /*headers: {
+                    'Authorization': ''
+                },*/
                 body: JSON.stringify(options)
             });
             const requestResponse = JSON.parse(await APIResponse.text());

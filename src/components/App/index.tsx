@@ -14,12 +14,11 @@ Amplify.configure(awsConfig);
 
 async function scrape() {
     const scraper = new Scraper();
-    const links = await scraper.scrapeSite('https://smartebike.co.uk/', { amazon: ['www.amazon.co.uk', 'amzn.to'] });
-    console.log(links);
+    const site = await scraper.scrapeSite('https://fryerguide.co.uk/', { amazon: ['www.amazon.co.uk', 'amzn.to'] });
+    console.log(site);
 }
 
 function App() {
-
   const [authState, setAuthState] = React.useState<AuthState>();
   const [name, setName] = React.useState<string>();
 
