@@ -14,7 +14,7 @@ Amplify.configure(awsConfig);
 
 async function scrape() {
     const scraper = new Scraper();
-    const site = await scraper.scrapeSite('https://smartebike.co.uk/', ['amazon']);
+    const site = await scraper.scrapeSite('https://crosstrainerhome.co.uk/', ['amazon']);
     console.log(site);
 }
 

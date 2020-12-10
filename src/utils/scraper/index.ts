@@ -17,18 +17,20 @@ export interface Site {
 export interface Page {
     url: string,
     site: Site,
-    links: { [key: string]: Link }
+    links: { [key: string]: Link },
+    error?: string
 }
 
 export interface Link {
     url: string,
+    productID?: string,
     store: string,
     site: Site,
-    pages: { [key: string]: Page }
+    pages: { [key: string]: Page },
+    error?: string
 }
 
 export default class Scraper {
-    public onError?: (error: Error) => any = (error) => { console.log(error) };
     public request;
 
     constructor({ proxy }: ScraperOptions = {}) {
@@ -53,15 +55,17 @@ export default class Scraper {
         const page: Page = { url: pageURL, site: site, links: {} }
         site.pages[pageURL] = page;
 
-        const dom = await this.request.dom({ url: page.url });
-        const promises = [];
-        for (const linkElement of Array.from(dom.window.document.links)) {
-            if (linkElement.hostname === site.hostname) {
-                const pageURL = `${linkElement.origin}${linkElement.pathname}`;
-                if (!site.pages[pageURL]) promises.push(this.scrapePage(pageURL, stores, site));
-            } else promises.push(this.scrapeLink(linkElement, stores, page, site));
-        }
-        await Promise.allSettled(promises);
+        try {
+            const dom = await this.request.dom({ url: page.url });
+            const promises = [];
+            for (const linkElement of Array.from(dom.window.document.links)) {
+                if (linkElement.hostname === site.hostname) {
+                    const pageURL = `${linkElement.origin}${linkElement.pathname}`;
+                    if (!site.pages[pageURL]) promises.push(this.scrapePage(pageURL, stores, site));
+                } else promises.push(this.scrapeLink(linkElement, stores, page, site));
+            }
+            await Promise.allSettled(promises);
+        } catch(error) { page.error = error.message }
     }
 
     async scrapeLink(
@@ -82,20 +86,30 @@ export default class Scraper {
             return;
         }
 
+        const linkHostname = linkElement.hostname;
         if (stores.includes('amazon')) {
-            const linkHostname = linkElement.hostname;
-            if (/amazon./.exec(linkHostname)) {
-                link = { url: `${linkElement.origin}${linkElement.pathname}`, store: 'amazon', site: site, pages: {} };
-            } else if (/amzn.to/.exec(linkHostname)) {
-                const { url } = await this.request.get(`${linkElement.origin}${linkElement.pathname}`);
-                link = { url: url, store: 'amazon', site: site, pages: {} };
+            const index = [/amazon./, /amzn.to/].findIndex((regex) => regex.exec(linkHostname));
+            if (index > 0) {
+                let linkURL = `${linkElement.origin}${linkElement.pathname}`;
+                try {
+                    let productID;
+                    if (index === 1) {
+                        const { url } = await this.request.get(linkURL);
+                        productID = regex.getAmazonProductID(url);
+                    } else productID = regex.getAmazonProductID(linkURL);
+                    if (productID) this.saveLink(linkURL, productID, 'amazon', page, site);
+                    else throw new Error('No productID in link');
+                } catch (error) {
+                    this.saveLink(linkURL, '', 'amazon', page, site, error.message);
+                }  
             }
         }
+    }
 
-        if (link) {
-            site.links[linkURL] = link;
-            page.links[linkURL] = link;
-            link.pages[page.url] = page;
-        }
+    saveLink(linkURL: string, productID: string | undefined, store: string, page: Page, site: Site, error?: string) {
+        const link: Link = {url: linkURL, productID: productID, store: store, site: site, pages: {}, error: error };
+        site.links[linkURL] = link;
+        page.links[linkURL] = link;
+        link.pages[page.url] = page;
     }
 }

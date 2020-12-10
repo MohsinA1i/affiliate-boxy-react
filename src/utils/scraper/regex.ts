@@ -6,12 +6,14 @@ class Regex {
     }
 
     getEndpoint(url: string) {
-        let match = /(?<!https:\/)(?<!http:\/)\/[^/]+$/.exec(url);
-        if (match) {
-            match = /\/([^?]+)/.exec(match[0]);
-            if (match) return match[1];
-        }
+        let match = /(?<!https:\/)(?<!http:\/)\/([^/?]+)(?:\?|$)/.exec(url);
+        if (match) return match[1];
         return '';
+    }
+
+    getAmazonProductID(url: string) {
+        let match = /(?<=\/dp\/)\w+/.exec(url);
+        if (match) return match[0];
     }
 }
 
