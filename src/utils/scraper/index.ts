@@ -1,4 +1,4 @@
-import Request from './request';
+import RequestManager from './request-manager';
 import regex from './regex';
 
 export interface ScraperOptions {
@@ -32,12 +32,11 @@ export interface Link {
 
 export default class Scraper {
     public request;
+    public proxy;
 
     constructor({ proxy }: ScraperOptions = {}) {
-        this.request = new Request({
-            requestAPIURL: 'https://s9222iji3e.execute-api.us-east-1.amazonaws.com/Prod/request/',
-            proxy: proxy
-        });
+        this.request = new RequestManager({ requestAPIURL: 'https://s9222iji3e.execute-api.us-east-1.amazonaws.com/Prod/request/' });
+        this.proxy = proxy;
     }
 
     async scrapeSite(siteURL: string, stores: Store[]) {
@@ -56,7 +55,7 @@ export default class Scraper {
         site.pages[pageURL] = page;
 
         try {
-            const dom = await this.request.dom({ url: page.url });
+            const dom = await this.request.dom({ url: page.url, proxy: this.proxy });
             const promises = [];
             for (const linkElement of Array.from(dom.window.document.links)) {
                 if (linkElement.hostname === site.hostname) {
@@ -91,25 +90,28 @@ export default class Scraper {
             const index = [/amazon./, /amzn.to/].findIndex((regex) => regex.exec(linkHostname));
             if (index > 0) {
                 let linkURL = `${linkElement.origin}${linkElement.pathname}`;
+                const link = this.saveLink(linkURL, 'amazon', page, site);
                 try {
                     let productID;
                     if (index === 1) {
-                        const { url } = await this.request.get(linkURL);
+                        const { url } = await this.request.get(linkURL, undefined, { proxy: this.proxy });
                         productID = regex.getAmazonProductID(url);
                     } else productID = regex.getAmazonProductID(linkURL);
-                    if (productID) this.saveLink(linkURL, productID, 'amazon', page, site);
+
+                    if (productID) link.productID = productID;
                     else throw new Error('No productID in link');
                 } catch (error) {
-                    this.saveLink(linkURL, '', 'amazon', page, site, error.message);
+                    link.error = error.message;
                 }  
             }
         }
     }
 
-    saveLink(linkURL: string, productID: string | undefined, store: string, page: Page, site: Site, error?: string) {
-        const link: Link = {url: linkURL, productID: productID, store: store, site: site, pages: {}, error: error };
+    saveLink(linkURL: string, store: Store, page: Page, site: Site) {
+        const link: Link = {url: linkURL, store: store, site: site, pages: {}};
         site.links[linkURL] = link;
         page.links[linkURL] = link;
         link.pages[page.url] = page;
+        return link;
     }
 }

@@ -2,12 +2,16 @@
 import { JSDOM, ResourceLoader, VirtualConsole, ConstructorOptions } from 'jsdom';
 import { CookieJar, Cookie } from 'tough-cookie';
 
-interface RequestOptions {
+interface RequestManagerOptions {
     headers?: { [key: string]: string },
     userAgent?: string,
     hostname?: string,
-    proxy?: string,
     requestAPIURL?: string,
+}
+
+interface RequestOptions {
+    headers?: { [key: string]: string },
+    proxy?: string,
 }
 
 interface DomOptions {
@@ -15,6 +19,7 @@ interface DomOptions {
     url?: string,
     content?: string,
     runScripts?: 'outside-only' | 'dangerously',
+    proxy?: string,
 }
 
 interface Response {
@@ -28,11 +33,10 @@ interface ErrorResponse {
     message: string,
 }
 
-export default class Request {
+export default class RequestManager {
     public headers;
     public userAgent;
     public hostname;
-    public proxy;
     private requestAPIURL;
     private cookieJar: CookieJar;
 
@@ -40,45 +44,50 @@ export default class Request {
         headers = {},
         userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0',
         hostname,
-        proxy,
         requestAPIURL,
-    }: RequestOptions = {}) {
+    }: RequestManagerOptions = {}) {
         this.headers = headers;
         this.userAgent = userAgent;
         this.hostname = hostname;
-        this.proxy = proxy;
         this.requestAPIURL = 'http://localhost:3000/request';
         //this.requestAPIURL = requestAPIURL;
 
         this.cookieJar = new CookieJar();
     }
 
-    async get(url: string, query?: { [key: string]: any }, headers?: { [key: string]: string }) {
+    async get(url: string, query?: { [key: string]: any }, { headers = {}, proxy }: RequestOptions = {}) {
         const options: { [key: string]: any } = { 
+            url: this._url(url),
             method: 'GET',
             headers: headers,
+            proxy: proxy,
         };
         if (query) options.url.search = new URLSearchParams(query);
-        return await this._request(url, options);
+        return await this._request(options);
     }
 
-    async post(url: string, body?: string, headers?: { [key: string]: string }) {
+    async post(url: string, body?: string, { headers = {}, proxy }: RequestOptions = {}) {
         const options: { [key: string]: any } = {
+            url: this._url(url),
             method: 'POST',
             headers: headers,
             body: body,
+            proxy: proxy,
         };
-        return await this._request(url, options);
+        return await this._request(options);
     }
 
-    async _request(url: string, options: { [key: string]: any }) {
+    _url(url: string) {
         if (url.startsWith('/')) url = `https://${this.hostname}${url}`;
-        console.log(`${options.method} Request ${url}`);
+        return new URL(url);
+    }
+
+    async _request(options: { [key: string]: any }) {
+        console.log(`${options.method} Request ${options.url}`);
         if (this.requestAPIURL) {
 //            const authenticatedUser = await Auth.currentAuthenticatedUser();
-            options.url = url;
+            if (!options.headers['user-agent']) options.headers['user-agent'] = this.userAgent;
             options.cookies = await this.cookieJar.serialize();
-            options.proxy = this.proxy;
             try {
                 const APIResponse = await fetch(this.requestAPIURL, {
                     method: 'POST',
@@ -96,7 +105,7 @@ export default class Request {
                 }
                 return requestResponse as Response;
             } catch (error) {
-                error.message = error.message + ' ' + url;
+                error.message = error.message + ' ' + options.url;
                 console.log(error.message);
                 throw error;
             }
@@ -106,7 +115,7 @@ export default class Request {
     async dom(options: DomOptions) {
         const domOptions: ConstructorOptions = {
             resources: new ResourceLoader({
-                proxy: this.proxy,
+                proxy: options.proxy,
                 strictSSL: false,
                 userAgent: this.userAgent
             }),
