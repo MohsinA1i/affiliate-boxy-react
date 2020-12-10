@@ -49,8 +49,8 @@ export default class RequestManager {
         this.headers = headers;
         this.userAgent = userAgent;
         this.hostname = hostname;
-        this.requestAPIURL = 'http://localhost:3000/request';
-        //this.requestAPIURL = requestAPIURL;
+        //this.requestAPIURL = 'http://localhost:3000/request';
+        this.requestAPIURL = requestAPIURL;
 
         this.cookieJar = new CookieJar();
     }
