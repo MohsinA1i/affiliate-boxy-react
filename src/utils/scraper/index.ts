@@ -5,24 +5,26 @@ export interface ScraperOptions {
     proxy?: string,
 }
 
+type Store = 'amazon' | 'ebay';
+
 export interface Site {
-    url: string,
+    hostname: string,
     image?: string,
-    pages: {[key: string]: Page},
-    links: {[key: string]: Link}
+    pages: { [key: string]: Page },
+    links: { [key: string]: Link }
 }
 
 export interface Page {
     url: string,
     site: Site,
-    links: {[key: string]: Link}
+    links: { [key: string]: Link }
 }
 
 export interface Link {
     url: string,
     store: string,
     site: Site,
-    pages: {[key: string]: Page}
+    pages: { [key: string]: Page }
 }
 
 export default class Scraper {
@@ -36,99 +38,64 @@ export default class Scraper {
         });
     }
 
-    async scrapeSite(siteDomain: string, storeDomains: { [key: string]: string[] }) {
-        siteDomain = regex.getHostname(siteDomain);
-        const siteUrl = `https://${siteDomain}/`;
-        const site: Site = { url: siteUrl, pages: {}, links: {} };
-        const page: Page = { url: siteUrl, site: site, links: {} }
-        site.pages[siteUrl] = page;
-        return new Promise((resolve) => {
-            const functionManager = new FunctionManager(this.scrapePage, this)
-                .then(() => { resolve(site) })
-                .catch((error) => { if (this.onError) this.onError(error) });
-            functionManager.execute(page, siteDomain, storeDomains, site);
-        });
+    async scrapeSite(siteURL: string, stores: Store[]) {
+        const hostname = regex.getHostname(siteURL);
+        const site: Site = { hostname: hostname, pages: {}, links: {} };
+        await this.scrapePage(`https://${hostname}/`, stores, site);
+        return site;
     }
 
     async scrapePage(
-        page: Page,
-        siteDomain: string,
-        storeDomains: { [key: string]: string[] },
+        pageURL: string,
+        stores: Store[],
         site: Site,
-        functionManager: FunctionManager,
     ) {
-        const dom = await this.dom(page.url);
-        for (const anchorElement of Array.from(dom.window.document.links)) {
-            if (anchorElement.hostname === siteDomain) {
-                const pageURL = `${anchorElement.origin}${anchorElement.pathname}`;
-                const page = site.pages[pageURL];
-                if (!page) { //Page does not exist
-                    //Add page to site
-                    const page: Page = { url: pageURL, site: site, links: {} }
-                    site.pages[pageURL] = page;
-                    functionManager.execute(page, siteDomain, storeDomains, site);
-                }
-            } else {
-                for (const storeName in storeDomains) {
-                    for (const storeDomain of storeDomains[storeName]) {
-                        if (anchorElement.hostname === storeDomain) {
-                            const linkURL = `${anchorElement.origin}${anchorElement.pathname}`;
-                            let link = site.links[linkURL];
-                            if (!link) { //Link does not exist
-                                link = { url: linkURL, store: storeName, site: site, pages: {} };
-                                link.pages[page.url] = page;
-                                //Add Link to site and page
-                                site.links[linkURL] = link;
-                                page.links[linkURL] = link;
-                            } else { //Link exists in site
-                                //Add link to page overwrite if exists
-                                page.links[linkURL] = link;
-                            }
-                        }
-                    }
-                }
+        const page: Page = { url: pageURL, site: site, links: {} }
+        site.pages[pageURL] = page;
+
+        const dom = await this.request.dom({ url: page.url });
+        const promises = [];
+        for (const linkElement of Array.from(dom.window.document.links)) {
+            if (linkElement.hostname === site.hostname) {
+                const pageURL = `${linkElement.origin}${linkElement.pathname}`;
+                if (!site.pages[pageURL]) promises.push(this.scrapePage(pageURL, stores, site));
+            } else promises.push(this.scrapeLink(linkElement, stores, page, site));
+        }
+        await Promise.allSettled(promises);
+    }
+
+    async scrapeLink(
+        linkElement: HTMLAnchorElement | HTMLAreaElement,
+        stores: Store[],
+        page: Page,
+        site: Site,
+    ) {
+        const linkURL = `${linkElement.origin}${linkElement.pathname}`;
+
+        let link = page.links[linkURL];
+        if (link) return;
+            
+        link = site.links[linkURL];
+        if (link) {
+            page.links[linkURL] = link;
+            link.pages[page.url] = page;
+            return;
+        }
+
+        if (stores.includes('amazon')) {
+            const linkHostname = linkElement.hostname;
+            if (/amazon./.exec(linkHostname)) {
+                link = { url: `${linkElement.origin}${linkElement.pathname}`, store: 'amazon', site: site, pages: {} };
+            } else if (/amzn.to/.exec(linkHostname)) {
+                const { url } = await this.request.get(`${linkElement.origin}${linkElement.pathname}`);
+                link = { url: url, store: 'amazon', site: site, pages: {} };
             }
         }
-    }
 
-    async dom(url: string) {
-        try {
-            return await this.request.dom({ url: url });
-        } catch (error) {
-            error.message = error.message + ' ' + url;
-            throw error;
+        if (link) {
+            site.links[linkURL] = link;
+            page.links[linkURL] = link;
+            link.pages[page.url] = page;
         }
-    }
-}
-
-class FunctionManager {
-    private handler: (...args: any[]) => any;
-    private onComplete?: () => any;
-    private onError?: (error: Error) => void;
-    private count: number = 0;
-
-    constructor(handler: (...args: any[]) => any, context?: object) {
-        this.handler = context ? handler.bind(context) : handler;
-        return this;
-    }
-
-    then(onComplete: (...args: any[]) => any) {
-        this.onComplete = onComplete;
-        return this;
-    }
-
-    catch(onError?: (error: Error) => void) {
-        this.onError = onError;
-        return this;
-    }
-
-    async execute(...args: any[]) {
-        this.count++;
-        args.push(this);
-        try {
-            await this.handler(...args);
-        } catch (error) { if (this.onError) this.onError(error) }
-        this.count--;
-        if (this.onComplete && this.count === 0) this.onComplete();
     }
 }

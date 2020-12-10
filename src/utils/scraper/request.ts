@@ -2,7 +2,7 @@
 import { JSDOM, ResourceLoader, VirtualConsole, ConstructorOptions } from 'jsdom';
 import { CookieJar, Cookie } from 'tough-cookie';
 
-export interface RequestOptions {
+interface RequestOptions {
     headers?: { [key: string]: string },
     userAgent?: string,
     hostname?: string,
@@ -10,17 +10,22 @@ export interface RequestOptions {
     requestAPIURL?: string,
 }
 
-export interface DomOptions {
+interface DomOptions {
     location?: string,
     url?: string,
     content?: string,
     runScripts?: 'outside-only' | 'dangerously',
 }
 
-export interface Response {
+interface Response {
+    status: number,
     url: string,
-    type: string,
-    body: any,
+    headers: {[key: string]: string},
+    body: string
+}
+
+interface ErrorResponse {
+    message: string,
 }
 
 export default class Request {
@@ -69,27 +74,33 @@ export default class Request {
     async _request(url: string, options: { [key: string]: any }) {
         if (url.startsWith('/')) url = `https://${this.hostname}${url}`;
         console.log(`${options.method} Request ${url}`);
-        options.url = new URL(url);
-        options.proxy = this.proxy;
         if (this.requestAPIURL) {
 //            const authenticatedUser = await Auth.currentAuthenticatedUser();
+            options.url = url;
             options.cookies = await this.cookieJar.serialize();
-            const APIResponse = await fetch(this.requestAPIURL, {
-                method: 'POST',
-                mode: 'cors',
-//                headers: { 'Authorization': authenticatedUser.signInUserSession.idToken.jwtToken },
-                body: JSON.stringify(options)
-            });
-            const requestResponse = JSON.parse(await APIResponse.text());
-            if (APIResponse.ok) {
-                const cookieHeader = requestResponse.headers['set-cookie'];
-                if (cookieHeader) {
-                    const cookies = [Cookie.parse(cookieHeader)];
-                    for (const cookie of cookies) if (cookie) await this.cookieJar.setCookie(cookie, options.url);
+            options.proxy = this.proxy;
+            try {
+                const APIResponse = await fetch(this.requestAPIURL, {
+                    method: 'POST',
+                    mode: 'cors',
+//                    headers: { 'Authorization': authenticatedUser.signInUserSession.idToken.jwtToken },
+                    body: JSON.stringify(options)
+                });
+                const requestResponse = JSON.parse(await APIResponse.text()) as Response | ErrorResponse;
+                if (APIResponse.ok) {
+                    const cookieHeader = (requestResponse as Response).headers['set-cookie'];
+                    if (cookieHeader) {
+                        const cookies = [Cookie.parse(cookieHeader)];
+                        for (const cookie of cookies) if (cookie) await this.cookieJar.setCookie(cookie, (requestResponse as Response).url);
+                    }
                 }
-                return requestResponse;
-            } else throw new Error(requestResponse.message);
-        }
+                return requestResponse as Response;
+            } catch (error) {
+                error.message = error.message + ' ' + url;
+                console.log(error.message);
+                throw error;
+            }
+        } throw new Error('Direct requests unsupported');
     }
 
     async dom(options: DomOptions) {

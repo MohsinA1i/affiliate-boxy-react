@@ -5,7 +5,8 @@
     "target": "ES5",
     "lib": [
       "DOM",
-      "DOM.Iterable"
+      "DOM.Iterable",
+      "ES2020.Promise"
     ],
     "allowJs": true,
     "skipLibCheck": true,
