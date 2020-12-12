@@ -11,6 +11,9 @@
 # production
 /build
 
+#trash
+/trash
+
 # Optional eslint cache
 .eslintcache
 

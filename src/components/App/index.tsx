@@ -8,14 +8,30 @@ import { AmplifyAuthenticator, AmplifySignOut } from '@aws-amplify/ui-react';
 import AWS from 'aws-sdk';
 
 import database from '../../utils/database';
+//import RequestManager from '../../utils/request-manager';
 import Scraper from '../../utils/scraper';
 
 Amplify.configure(awsConfig);
 
 async function scrape() {
+    /*const request = new RequestManager();
+    const response = await request.getAmazonProduct({
+      credentials: {
+        partnerTag: 'lawnmowerhq-21',
+        accessKey: 'AKIAI37L7QFQTPIZOBDQ',
+        secretKey: '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',
+        marketplace: 'www.amazon.co.uk',
+      },
+      productIDs: ['B08BXHKWWY']
+    });
+    console.log(response);*/
     const scraper = new Scraper();
     const site = await scraper.scrapeSite('https://crosstrainerhome.co.uk/', ['amazon']);
-    console.log(site);
+    const productIDs = [];
+    for (const link of Object.values(site.links)) {
+      if (link.productID) productIDs.push(link.productID);
+    }
+    console.log(productIDs);
 }
 
 function App() {
