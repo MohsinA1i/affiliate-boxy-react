@@ -5,12 +5,6 @@ class Regex {
         return '';
     }
 
-    getDomain(url: string) {
-        const match = /(?:https?:\/\/)?(?:www\.)?([^/]+)/.exec(url);
-        if (match) return match[1];
-        return '';
-    }
-
     getEndpoint(url: string) {
         let match = /(?<!https:\/)(?<!http:\/)\/([^/?]+)(?:\?|$)/.exec(url);
         if (match) return match[1];

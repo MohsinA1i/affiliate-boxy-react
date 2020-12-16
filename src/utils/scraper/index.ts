@@ -1,4 +1,4 @@
-import RequestManager from '../request-manager';
+import RequestAPI, { LinkDetails, ScrapedLink } from '../request-api';
 import regex from './regex';
 
 export interface ScraperOptions {
@@ -29,90 +29,129 @@ export interface Link {
 }
 
 export default class Scraper {
-    public request;
+    private requestAPI;
     public proxy;
 
     constructor({ proxy }: ScraperOptions = {}) {
-        this.request = new RequestManager({ 
-            requestAPIURL: 'https://s9222iji3e.execute-api.us-east-1.amazonaws.com/Prod/'
+        this.requestAPI = new RequestAPI({
+            //requestAPIURL: 'https://s9222iji3e.execute-api.us-east-1.amazonaws.com/Prod/'
         });
         this.proxy = proxy;
     }
 
     async scrapeSite(siteURL: string, stores: ('amazon' | 'ebay')[]) {
         const hostname = regex.getHostname(siteURL);
+
+        const linkDetails = [{
+            name: 'site',
+            regex: `https://${hostname}`
+        }];
+        if (stores.includes('amazon')) {
+            linkDetails.push({
+                name: 'amazon',
+                regex: 'amazon.'
+            });
+            linkDetails.push({
+                name: 'amzn',
+                regex: 'amzn.to'
+            });
+        }
+
         const site: Site = { hostname: hostname, pages: {}, links: {} };
-
-        let storeRegex: RegExp[] = [];
-        if (stores.includes('amazon')) storeRegex = [...storeRegex, /amazon./, /amzn.to/];
-
-        await this.scrapePage(`https://${hostname}/`, storeRegex, site);
+        const page = this.createPage(`https://${hostname}/`, site);
+        await this.requestResources([page], [], linkDetails);
         return site;
     }
 
-    async scrapePage(
-        pageURL: string,
-        stores: RegExp[],
-        site: Site,
-    ) {
+    async requestResources(pages: Page[], links: Link[], linkDetails: LinkDetails[]) {
+        const [ followRedirectResponse, scrapeLinksResponse ] = await Promise.allSettled([
+            this.requestAPI.followRedirect({
+                targets: links.map((link) => link.url),
+                proxy: this.proxy
+            }),
+            this.requestAPI.scrapeLinks({
+                targets: pages.map((page) => {
+                    return { url: page.url, links: linkDetails }
+                }),
+                proxy: this.proxy
+            })
+        ]);
+        
+        if (followRedirectResponse.status === 'fulfilled') {
+            for (const [index, redirectedURL] of followRedirectResponse.value.entries()) {
+                const link = links[index];
+                if (redirectedURL.error) {
+                    link.error = redirectedURL.error;
+                } else {
+                    link.store = regex.getHostname(redirectedURL.url);
+                    link.productID = regex.getAmazonProductID(redirectedURL.url);
+                }
+            }
+        } else console.log(followRedirectResponse.reason);
+
+        if (scrapeLinksResponse.status === 'fulfilled') {
+            let newPages: Page[] = [];
+            let newLinks: Link[] = [];
+            for (const [index, scrapedPage] of scrapeLinksResponse.value.entries()) {
+                const page = pages[index];
+                if (scrapedPage.error) {
+                    page.error = scrapedPage.error;
+                } else {
+                    const scrapedLinks = scrapedPage.links;
+                    newPages = [...newPages, ...this.createPages(scrapedLinks, page.site)];
+                    newLinks = [...newLinks, ...this.createLinks(scrapedLinks, page)];
+                }
+            }
+            if (newPages.length > 0 || newLinks.length > 0)
+                await this.requestResources(newPages, newLinks, linkDetails);
+        } else console.log(scrapeLinksResponse.reason);
+    }
+
+    createPages(scrapedLinks: ScrapedLink[], site: Site) {
+        const pages = [];
+        for (const scrapedLink of scrapedLinks) {
+            if (scrapedLink.type === 'site') {
+                const page = site.pages[scrapedLink.url];
+                if (!page) {
+                    const page = this.createPage(scrapedLink.url, site);
+                    pages.push(page);
+                }
+            }
+        }
+        return pages;
+    }
+
+    createLinks(scrapedLinks: ScrapedLink[], page: Page) {
+        const links = [];
+        for (const scrapedLink of scrapedLinks) {
+            if (scrapedLink.type !== 'site') {
+                const link = page.site.links[scrapedLink.url];
+                if (!link) {
+                    const link = this.createLink(scrapedLink.url, page);
+                    if (scrapedLink.type === 'amazon') {
+                        link.store = regex.getHostname(scrapedLink.url);
+                        link.productID = regex.getAmazonProductID(scrapedLink.url);
+                    } else if (scrapedLink.type === 'amzn') {
+                        links.push(link);
+                    }
+                } else if (!page.links[scrapedLink.url]) {
+                    page.links[scrapedLink.url] = link;
+                    link.pages[page.url] = page;
+                }
+            }
+        }
+        return links;
+    }
+
+    createPage(pageURL: string, site: Site) {
         const page: Page = { url: pageURL, site: site, links: {} }
         site.pages[pageURL] = page;
-
-        try {
-            const dom = await this.request.dom({ url: page.url, proxy: this.proxy });
-            const promises = [];
-            for (const linkElement of Array.from(dom.window.document.links)) {
-                if (linkElement.hostname === site.hostname) {
-                    const pageURL = `${linkElement.origin}${linkElement.pathname}`;
-                    if (!site.pages[pageURL]) promises.push(this.scrapePage(pageURL, stores, site));
-                } else promises.push(this.scrapeLink(linkElement, stores, page, site));
-            }
-            await Promise.allSettled(promises);
-        } catch (error) { page.error = error.message }
+        return page;
     }
 
-    async scrapeLink(
-        linkElement: HTMLAnchorElement | HTMLAreaElement,
-        stores: RegExp[],
-        page: Page,
-        site: Site,
-    ) {
-        const linkURL = `${linkElement.origin}${linkElement.pathname}`;
-
-        let link = page.links[linkURL];
-        if (link) return;
-
-        link = site.links[linkURL];
-        if (link) {
-            page.links[linkURL] = link;
-            link.pages[page.url] = page;
-            return;
-        }
-
-        const match = stores.find((regex) => regex.exec(linkElement.host));
-        if (match) {
-            let linkURL = `${linkElement.origin}${linkElement.pathname}`;
-            const link = this.saveLink(linkURL, page, site);
-            try {
-                const linkType = String(match).slice(1, -1);
-                if (linkType === 'amazon.') {
-                    link.store = linkElement.host;
-                    link.productID = regex.getAmazonProductID(linkURL);
-                } else if (linkType === 'amzn.to') {
-                    const { url } = await this.request.get(linkURL, undefined, { proxy: this.proxy });
-                    link.store = regex.getHostname(url);
-                    link.productID = regex.getAmazonProductID(url);
-                }
-                if (!link.productID) throw new Error('Failed to find productID');
-            } catch (error) {
-                link.error = error.message;
-            }
-        }
-    }
-
-    saveLink(linkURL: string, page: Page, site: Site) {
-        const link: Link = { url: linkURL, store: '', site: site, pages: {} };
-        site.links[linkURL] = link;
+    createLink(linkURL: string, page: Page) {
+        const link: Link = { url: linkURL, store: '', site: page.site, pages: {} };
+        page.site.links[linkURL] = link;
         page.links[linkURL] = link;
         link.pages[page.url] = page;
         return link;

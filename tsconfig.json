@@ -1,27 +1,31 @@
 {
   "compilerOptions": {
-    "outDir": "build",
-    "sourceMap": true,
     "target": "ES5",
+    "module": "esnext",
     "lib": [
       "DOM",
       "DOM.Iterable",
       "ES2020.Promise"
     ],
-    "typeRoots": ["./node_modules/@types", "./src/types"],
     "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "jsx": "react-jsx",
     "resolveJsonModule": true,
-    "isolatedModules": true,
+    "sourceMap": true,
+    "outDir": "build",
     "noEmit": true,
-    "jsx": "react-jsx"
+    "downlevelIteration": true,
+    "isolatedModules": true,
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "node",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
     "src"
