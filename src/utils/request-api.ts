@@ -38,7 +38,12 @@ interface AmazonProductOptions {
 }
 
 interface AmazonProductResponse {
-
+    productID: string,
+    url?: string,
+    name?: string,
+    image?: string,
+    availability?: { code: number, text: string },
+    error?: string
 }
 
 export default class RequestAPI {

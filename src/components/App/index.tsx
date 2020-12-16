@@ -9,17 +9,31 @@ import AWS from 'aws-sdk';
 
 import database from '../../utils/database';
 import Scraper from '../../utils/scraper';
+import RequestAPI from '../../utils/request-api';
 
 Amplify.configure(awsConfig);
 
 async function scrape() {
     const scraper = new Scraper();
     const site = await scraper.scrapeSite('https://crosstrainerhome.co.uk/', ['amazon']);
+    console.log(site);
     const productIDs = [];
     for (const link of Object.values(site.links)) {
       if (link.productID) productIDs.push(link.productID);
     }
-    console.log(productIDs);
+    const requestAPI = new RequestAPI({
+      requestAPIURL: 'https://s9222iji3e.execute-api.us-east-1.amazonaws.com/Prod/'
+    });
+    const products = await requestAPI.getAmazonProduct({
+      credentials: {
+        partnerTag: 'lawnmowerhq-21',
+        accessKey: 'AKIAINZLA4OEUYL5RXIQ',
+        secretKey: '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',
+        marketplace: 'www.amazon.co.uk'
+      },
+      productIDs: productIDs,
+    });
+    console.log(products);
 }
 
 function App() {
