@@ -1,0 +1,35 @@
+@import '../../variables.sass'
+
+.attribute
+    margin: 8px
+    padding: 0px 8px 0px 8px
+    border-left: solid 4px $color-border
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+
+.attribute-name
+    font-size: 0.8rem
+    color: $color-text-muted
+
+.attribute-value
+    overflow: hidden
+    text-overflow: ellipsis
+    overflow-wrap: break-word
+    word-wrap: break-word
+    -ms-word-break: break-all
+    word-break: break-all
+    line-height: 1rem 
+    max-height: 2rem
+    display: -webkit-box
+    -webkit-line-clamp: 2
+    -webkit-box-orient: vertical
+    
+.attribute-button
+    font-size: 0.8rem
+
+.attribute-warning
+    border-left-color: $color-warning
+
+.attribute-error
+    border-left-color: $color-error

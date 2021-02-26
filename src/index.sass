@@ -1,0 +1,44 @@
+@import ./variables.sass
+
+body
+  margin: 0
+  background: $color-background
+  font-size: 14px
+  color: $color-text
+  font-family: 'Roboto', sans-serif
+  -webkit-font-smoothing: antialiased
+  -moz-osx-font-smoothing: grayscale
+  -webkit-tap-highlight-color: transparent
+
+a
+  color: $color-text-muted
+  text-decoration: none
+  transition: color .15s ease-in-out
+  &:active
+    color: $color-text
+
+@media (hover: hover)
+  a:hover
+    color: $color-text
+
+::placeholder
+  color: $color-text-muted
+  opacity: 1
+
+::-ms-input-placeholder
+  color: $color-text-muted
+
+::-webkit-scrollbar
+  width: 10px
+
+::-webkit-scrollbar-track
+  background: darken($color-primary, 15%)
+
+::-webkit-scrollbar-thumb
+  border-radius: 5px
+  background: $color-primary
+  &:hover
+    background: lighten($color-primary, 5%)
+
+*, *:before, *:after
+  box-sizing: border-box

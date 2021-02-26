@@ -1,41 +1,43 @@
 {
   "name": "affiliate-boxy",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@aws-amplify/ui-react": "^0.2.31",
-    "@testing-library/jest-dom": "^5.11.4",
-    "@testing-library/react": "^11.1.0",
-    "@testing-library/user-event": "^12.1.10",
-    "@types/deep-diff": "^1.0.0",
-    "@types/jest": "^26.0.15",
-    "@types/jsdom": "^16.2.5",
-    "@types/node": "^12.0.0",
-    "@types/react": "^16.9.53",
-    "@types/react-dom": "^16.9.8",
-    "@types/rfdc": "^1.1.0",
-    "aws-amplify": "^3.3.11",
-    "aws-sdk": "^2.800.0",
-    "deep-diff": "^1.0.2",
-    "jsdom": "^16.4.0",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "react-scripts": "4.0.1",
-    "rfdc": "^1.1.4",
-    "tough-cookie": "^4.0.0",
-    "typescript": "^4.1.2",
-    "web-vitals": "^0.2.4"
-  },
+  "description": "Link manager",
+  "version": "1.0.0",
+  "repository": "https://github.com/MohsinA1i/affiliate-boxy",
+  "author": "MohsinA1i",
+  "license": "UNLICENSED",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
+  "dependencies": {
+    "@aws-amplify/ui-react": "^0.2.31",
+    "@fortawesome/fontawesome-svg-core": "^1.2.32",
+    "@fortawesome/free-brands-svg-icons": "^5.15.2",
+    "@fortawesome/free-regular-svg-icons": "^5.15.1",
+    "@fortawesome/free-solid-svg-icons": "^5.15.2",
+    "@fortawesome/react-fontawesome": "^0.1.14",
+    "aws-amplify": "^3.3.11",
+    "aws-sdk": "^2.800.0",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-router-dom": "^5.2.0",
+    "react-spring": "^8.0.27",
+    "web-vitals": "^0.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^12.0.0",
+    "@types/react": "^16.9.53",
+    "@types/react-dom": "^16.9.8",
+    "@types/react-router-dom": "^5.1.7",
+    "node-sass": "4.14.1",
+    "react-scripts": "4.0.1",
+    "typescript": "^4.1.2"
+  },
   "eslintConfig": {
     "extends": [
-      "react-app",
-      "react-app/jest"
+      "react-app"
     ]
   },
   "browserslist": {

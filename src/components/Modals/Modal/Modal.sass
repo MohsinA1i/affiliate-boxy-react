@@ -1,0 +1,53 @@
+@import '../../../variables.sass'
+    
+.modal-container
+    position: fixed
+    top: 0
+    left: 0
+    width: 100vw
+    height: 100vh
+    background-color: rgba(0,0,0,0.3)
+    z-index: 3
+    overflow-y: auto
+    -ms-overflow-style: none
+    scrollbar-width: none
+
+.modal-container::-webkit-scrollbar
+    display: none
+
+.modal
+    margin: 25px 15px
+    background-color: $color-surface
+    border-radius: 8px
+
+@media (min-width: 576px)
+    .modal
+        max-width: 500px
+        margin: 25px auto
+
+.modal-header
+    padding: 16px 16px 20px 16px
+    display: flex
+    align-items: center
+    background: $color-primary
+    border-radius: 8px 8px 0px 0px
+
+.modal-heading
+    font-size: 18px
+    font-weight: bold
+    color: $color-text-alternate
+
+.modal-close
+    margin-left: auto
+    color: $color-icon-alternate-muted !important
+    &:hover
+        color: $color-icon-alternate !important
+
+.modal-body
+    padding: 8px
+    display: flex
+    flex-direction: column
+    background: $color-surface
+    border-radius: 8px 8px 0px 0px
+    transform: translateY(-8px)
+    box-shadow: 0px -4px 4px rgba(0,0,0, 0.1)

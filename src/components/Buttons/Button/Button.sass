@@ -1,0 +1,28 @@
+@import '../../../variables.sass'
+    
+.button
+    position: relative
+    padding: 8px
+    color: $color-text-alternate
+    outline: none
+    border: none
+    border-radius: 8px
+    overflow: hidden
+    background: $color-primary
+    z-index: 1
+
+.button-content
+    position: relative
+    z-index: 1
+
+.button-ripple
+    position: absolute
+    border-radius: 50%
+    background: lighten($color-primary, 5%)
+    transform: scale(0)
+    transition: transform .2s ease-in-out
+
+.fill-button .button-ripple
+    transform: scale(1)
+        
+        

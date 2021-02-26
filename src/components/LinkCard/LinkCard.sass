@@ -1,0 +1,33 @@
+@import '../../variables.sass'
+
+.link-card
+    flex: 1
+    margin: 8px 16px 8px 16px
+    display: flex
+    flex-direction: column
+    align-items: stretch
+    overflow: hidden
+    background: $color-surface
+    border: 2px solid transparent
+    border-radius: 8px
+    box-shadow: 4px 4px 4px rgba(0,0,0, 0.1)
+
+.link-card-selected.link-card
+    border-color: $color-primary
+
+.attributes
+    padding: 8px
+    flex: 1
+    display: flex
+    flex-wrap: wrap
+    overflow: hidden
+
+.link-card-footer
+    padding: 8px
+    display: flex
+    align-items: center
+
+.link-card-attribute-info
+    margin-left: auto
+    color: $color-text-muted
+    font-size: 0.8rem

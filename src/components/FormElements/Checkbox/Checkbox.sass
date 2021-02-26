@@ -1,0 +1,36 @@
+@import '../../../variables.sass'
+
+.checkbox-container
+    position: relative
+
+.checkbox
+    position: absolute
+    width: 16px
+    height: 16px
+    margin: 0px
+    padding: 0px
+    opacity: 0
+            
+    &:checked + .custom-checkbox
+        background: $color-primary
+        border-color: $color-primary
+
+        & > .custom-checkbox-icon
+            color: #ffffff
+
+    &:hover + .custom-checkbox
+        border-color: $color-primary
+
+.custom-checkbox
+    width: 16px
+    height: 16px
+    display: flex
+    align-items: center
+    justify-content: center
+    border: 2px solid $color-border
+    transition: border-color .15s ease-in-out
+
+.custom-checkbox-icon
+    width: 10px
+    height: 10px
+    color: transparent

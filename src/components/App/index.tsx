@@ -1,77 +1,16 @@
-import React from 'react';
-import './App.css';
+import { BrowserRouter } from 'react-router-dom'
 
-import Amplify, { Auth } from 'aws-amplify';
-import awsConfig from '../../aws-exports';
-import { AuthState, onAuthUIStateChange } from '@aws-amplify/ui-components';
-import { AmplifyAuthenticator, AmplifySignOut } from '@aws-amplify/ui-react';
-import AWS from 'aws-sdk';
+import { UserContextProvider } from '../../contexts/UserContext'
+import NavView from '../Views/NavView'
 
-import database from '../../utils/database';
-import Scraper from '../../utils/scraper';
-import RequestAPI from '../../utils/request-api';
-
-Amplify.configure(awsConfig);
-
-async function scrape() {
-    const scraper = new Scraper();
-    const site = await scraper.scrapeSite('https://crosstrainerhome.co.uk/', ['amazon']);
-    console.log(site);
-    const productIDs = [];
-    for (const link of Object.values(site.links)) {
-      if (link.productID) productIDs.push(link.productID);
-    }
-    const requestAPI = new RequestAPI({
-      requestAPIURL: 'https://s9222iji3e.execute-api.us-east-1.amazonaws.com/Prod/'
-    });
-    const products = await requestAPI.getAmazonProduct({
-      credentials: {
-        partnerTag: 'lawnmowerhq-21',
-        accessKey: 'AKIAINZLA4OEUYL5RXIQ',
-        secretKey: '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',
-        marketplace: 'www.amazon.co.uk'
-      },
-      productIDs: productIDs,
-    });
-    console.log(products);
+const App = () => {
+  return (
+    <UserContextProvider>
+      <BrowserRouter>
+        <NavView />
+      </BrowserRouter>
+    </UserContextProvider>
+  )
 }
 
-function App() {
-  const [authState, setAuthState] = React.useState<AuthState>();
-  const [name, setName] = React.useState<string>();
-
-  React.useEffect(() => {
-    return onAuthUIStateChange(async (authState, user: { [key: string]: any } | undefined) => {
-      if (authState === AuthState.SignedIn) {
-        AWS.config.region = 'us-east-1';
-        AWS.config.credentials = await Auth.currentCredentials();
-        /*AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-          IdentityPoolId: 'us-east-1:88e9ef87-bf66-4cca-8444-d4dae4ffb582',
-          Logins: {
-            'cognito-idp.us-east-1.amazonaws.com/us-east-1_47AghMuTk': user?.signInUserSession.accessToken.jwtToken
-          }
-        });*/
-        const username = user?.username;
-        await database.loadData(username);
-        setName(username.charAt(0).toUpperCase() + username.slice(1));
-        scrape();
-      }
-      setAuthState(authState);
-    });
-  }, []);
-
-  if (authState === AuthState.SignedIn) {
-    return (
-      <div>
-        <div style={{ margin: "1rem" }}>
-          <div>Welcome back {name}</div>
-        </div>
-        <AmplifySignOut />
-      </div>
-    );
-  } else {
-    return (<AmplifyAuthenticator />);
-  }
-}
-
-export default App;
+export default App

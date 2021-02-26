@@ -1,0 +1,96 @@
+@import '../../../variables.sass'
+
+.links-view
+    height: 100%
+    width: 200%
+    display: flex
+    transition: transform .4s ease-in-out
+
+.left-view
+    width: 100%
+    position: relative
+    display: flex
+    flex-direction: column
+
+.right-view
+    width: 100%
+    background: $color-surface
+    z-index: 1
+    box-shadow: -4px 0px 4px rgba(0,0,0, 0.1)
+
+@media (min-width: 576px)
+    .links-view
+        width: 100%
+
+    .left-view
+        width: 50%
+
+    .right-view
+        width: 50%
+
+.slide.links-view
+    transform: translateX(-50%)
+
+.links-container
+    width: 100%
+    padding-top: 54px
+    padding-bottom: 72px
+    overflow-y: scroll
+    -ms-overflow-style: none
+    scrollbar-width: none
+    &::-webkit-scrollbar
+        display: none
+
+.link-container
+    display: flex
+
+.link-check-container
+    margin-left: 16px
+    display: flex
+    align-items: center
+    justify-content: center
+
+.filter-button
+    position: absolute
+    bottom: 72px
+    right: 0px
+    padding: 12px !important
+    background: $color-surface !important
+    z-index: 1
+    border-radius: 8px 0px 0px 8px !important
+    box-shadow: -4px 4px 4px rgba(0,0,0, 0.1)
+
+.filter-heading
+    margin: 8px 16px 0px 16px
+    color: $color-text-muted
+
+.filter-group
+    padding: 8px
+    display: flex
+    flex-wrap: wrap
+
+.filter
+    margin: 4px
+    padding: 8px 12px
+    background: $color-background
+    display: flex
+    align-items: center
+    border-radius: 14px
+    & > span
+        font-size: 0.8rem
+        white-space: nowrap
+        overflow: hidden
+        color: $color-text-muted
+    & > button
+        font-size: 0.8rem
+        margin-left: 12px
+
+.filter-add
+    width: 30px
+    height: 30px
+    margin: 4px
+    font-size: 0.8rem !important
+    background: $color-background !important
+    border-radius: 50%
+
+        
