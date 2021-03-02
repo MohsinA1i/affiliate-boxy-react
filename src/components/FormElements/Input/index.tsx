@@ -1,16 +1,17 @@
 import './Input.sass'
-import React, { forwardRef } from 'react'
+import { forwardRef } from 'react'
 
-interface Properties extends React.InputHTMLAttributes<HTMLInputElement> {
+interface Properties {
     heading: string
+    placeholder?: string
     className?: string
 }
 
-const Input = forwardRef<HTMLInputElement, Properties>(({ heading, className }, ref) => {
+const Input = forwardRef<HTMLInputElement, Properties>(({ heading, placeholder, className }, ref) => {
     return (
-        <div className={className}>
-            {heading && <h3 className='input-heading'>{heading}</h3>}
-            <input className='input' ref={ref} />
+        <div className={className ? className + ' input-group' : 'input-group'}>
+            {heading && <div className='input-heading'>{heading}</div>}
+            <input className='input' placeholder={placeholder} ref={ref} />
         </div>
     )
 })

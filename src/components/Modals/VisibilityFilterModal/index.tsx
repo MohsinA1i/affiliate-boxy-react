@@ -1,5 +1,3 @@
-import './VisibilityFilterModal.sass'
-
 import Modal from '../Modal'
 import Select from '../../FormElements/Select'
 import Button from '../../Buttons/Button'
@@ -12,8 +10,8 @@ interface Properties {
 const VisibilityFilterModal = ({ shown, show }: Properties) => {
     return (
         <Modal heading='Show Attribute' shown={shown} show={show}>
-            <Select heading='Attribute Name' className='visibility-filter-select' options={[ 'Short Link' ]} />
-            <Button className='visibility-filter-confirm' onClick={()=> { show(false) }}>Show</Button>
+            <Select heading='Attribute Name' options={[ 'Short Link' ]} />
+            <Button onClick={()=> { show(false) }}>Show</Button>
         </Modal>
     )
 }

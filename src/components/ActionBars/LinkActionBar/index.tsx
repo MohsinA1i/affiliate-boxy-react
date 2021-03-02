@@ -27,7 +27,7 @@ const LinkActionBar = () => {
     transition.sort((a, b) => parseInt(a.key) - parseInt(b.key))
 
     return (
-        <ActionBar>
+        <ActionBar shown={selectedCount > 0}>
             <div className='link-selector'>
                 <Checkbox selected={selectedCount === links.length} select={(selected) => {
                     const _links = (links as ViewLink[]).map(link => {

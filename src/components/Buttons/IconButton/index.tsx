@@ -6,11 +6,9 @@ interface Properties extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     icon: IconDefinition
 }
 
-const IconButton = ({icon, ...properties}: Properties) => {
-    const newProperties = {...properties}
-    newProperties.className = newProperties.className ? newProperties.className + ' icon-button' : 'icon-button'
+const IconButton = ({icon, className, ...properties}: Properties) => {
     return (
-        <button {...newProperties}>
+        <button className={className ? className + ' icon-button' : 'icon-button'} {...properties}>
             <FontAwesomeIcon icon={icon} />
         </button>
     )

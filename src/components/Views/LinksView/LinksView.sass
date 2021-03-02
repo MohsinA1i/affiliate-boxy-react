@@ -4,7 +4,7 @@
     height: 100%
     width: 200%
     display: flex
-    transition: transform .4s ease-in-out
+    transition: transform .2s ease-in
 
 .left-view
     width: 100%
@@ -32,9 +32,8 @@
     transform: translateX(-50%)
 
 .links-container
+    padding: 16px
     width: 100%
-    padding-top: 54px
-    padding-bottom: 72px
     overflow-y: scroll
     -ms-overflow-style: none
     scrollbar-width: none
@@ -45,52 +44,19 @@
     display: flex
 
 .link-check-container
-    margin-left: 16px
+    margin-right: 8px
     display: flex
     align-items: center
     justify-content: center
 
-.filter-button
-    position: absolute
-    bottom: 72px
-    right: 0px
-    padding: 12px !important
-    background: $color-surface !important
-    z-index: 1
-    border-radius: 8px 0px 0px 8px !important
-    box-shadow: -4px 4px 4px rgba(0,0,0, 0.1)
-
-.filter-heading
-    margin: 8px 16px 0px 16px
-    color: $color-text-muted
-
-.filter-group
-    padding: 8px
+.link-buttons
     display: flex
-    flex-wrap: wrap
+    justify-content: flex-end
 
-.filter
-    margin: 4px
-    padding: 8px 12px
-    background: $color-background
-    display: flex
-    align-items: center
-    border-radius: 14px
-    & > span
-        font-size: 0.8rem
-        white-space: nowrap
-        overflow: hidden
-        color: $color-text-muted
-    & > button
-        font-size: 0.8rem
-        margin-left: 12px
+.right-view-close
+    margin: 8px
 
-.filter-add
-    width: 30px
-    height: 30px
-    margin: 4px
-    font-size: 0.8rem !important
-    background: $color-background !important
-    border-radius: 50%
-
-        
+@media (min-width: 576px)
+    .filter-button,
+    .right-view-close
+        display: none

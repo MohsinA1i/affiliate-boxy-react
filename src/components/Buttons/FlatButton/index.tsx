@@ -1,10 +1,8 @@
 import './FlatButton.sass'
 
-const FlatButton = ({ children, ...properties}: React.ButtonHTMLAttributes<HTMLButtonElement>) => {
-    const _properties = {...properties}
-    _properties.className = _properties.className ? _properties.className + ' flat-button' : 'flat-button'
+const FlatButton = ({ children, className, ...properties}: React.ButtonHTMLAttributes<HTMLButtonElement>) => {
     return (
-        <button {..._properties}>{children}</button>
+        <button className={className ? className + ' flat-button' : 'flat-button'} {...properties}>{children}</button>
     )
 }
 

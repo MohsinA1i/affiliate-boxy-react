@@ -1,7 +1,7 @@
 import './Button.sass'
 import { createRef, forwardRef, useEffect, useRef } from 'react'
 
-const Button = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(({children, ...properties}, ref) => {
+const Button = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(({children, className, ...properties}, ref) => {
     const button = ref as React.RefObject<HTMLButtonElement> || createRef()
     const ripple = useRef<HTMLDivElement>(null)
 
@@ -38,10 +38,8 @@ const Button = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButt
         }
     }, [button])
 
-    const _properties = {...properties}
-    _properties.className = _properties.className ? _properties.className + ' button' : 'button'
     return (
-        <button {..._properties} ref={button}>
+        <button className={className ? className + ' button' : 'button'} {...properties} ref={button}>
             <div className='button-content'>{children}</div>
             <div className='button-ripple' ref={ripple} />
         </button>

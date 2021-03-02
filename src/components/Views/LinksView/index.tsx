@@ -1,14 +1,14 @@
 import './LinksView.sass'
 import { useEffect, useState } from 'react'
 import { useTransition, animated } from 'react-spring'
-import { faTimes, faFilter, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faChevronLeft, faFilter, faSortAmountDown } from '@fortawesome/free-solid-svg-icons'
 
 import { useLinks, Link } from '../../../contexts/LinksContext'
 import LinkCard from '../../LinkCard'
 import Checkbox from '../../FormElements/Checkbox'
-import IconButton from '../../Buttons/IconButton'
 import LinkActionBar from '../../ActionBars/LinkActionBar'
-import VisibilityFilterModal from '../../Modals/VisibilityFilterModal'
+import FilterView from '../FilterView'
+import IconTextButton from '../../Buttons/IconTextButton'
 
 export interface ViewLink extends Link {
     sortId: number
@@ -16,17 +16,13 @@ export interface ViewLink extends Link {
 }
 
 const LinksView = () => {
-    const [largeScreen, setLargeScreen] = useState(false)
     const [rightViewShown, showRightView] = useState(false)
-
     const { state: links, update: setLinks } = useLinks()
-    const [searchFilter, setSearchFilter] = useState([
+    const [searchFilters, setSearchFilters] = useState([
         { name: 'Long Link', value: 'iphone' },
         { name: 'Product Availability', value: 'unavailable' }
     ])
-    const [visibilityFilter, setVisibilityFilter] = useState(['Short Link', 'Long Link', 'Product', 'Page'])
-
-    const [visibiltyFilterModalShown, showVisibilityFilterModal] = useState(false)
+    const [visibilityFilters, setVisibilityFilters] = useState(['Short Link', 'Long Link', 'Product', 'Page'])
 
     const linksTransition = useTransition((links as ViewLink[]), link => link.id, {
         from: { opacity: 0, maxHeight: '0px' },
@@ -34,26 +30,6 @@ const LinksView = () => {
         leave: { opacity: 0, maxHeight: '0px' }
     })
     linksTransition.sort((a, b) => parseInt(a.key) - parseInt(b.key))
-
-    const searchFiltersTransition = useTransition(searchFilter, filter => filter.name, {
-        from: { opacity: 0, maxWidth: '0px' },
-        enter: { opacity: 1, maxWidth: '200px' },
-        leave: { opacity: 0, maxWidth: '0px' }
-    })
-
-    const visibilityFiltersTransition = useTransition(visibilityFilter, filter => filter, {
-        from: { opacity: 0, maxWidth: '0px' },
-        enter: { opacity: 1, maxWidth: '200px' },
-        leave: { opacity: 0, maxWidth: '0px' }
-    })
-
-    useEffect(() => {
-        const mediaQueryList = window.matchMedia('(min-width: 576px)')
-        const handleResize = (event: MediaQueryListEvent) => { setLargeScreen(event.matches) }
-        mediaQueryList.addEventListener('change', handleResize)
-        setLargeScreen(mediaQueryList.matches)
-        return () => { mediaQueryList.removeEventListener('change', handleResize) }
-    }, [])
 
     useEffect(() => {
         const links: Link[] = []
@@ -86,9 +62,12 @@ const LinksView = () => {
     return (
         <div className={'links-view' + (rightViewShown ? ' slide' : '')}>
             <div className='left-view'>
-                {!largeScreen && <IconButton className='filter-button' icon={faFilter}
-                    onClick={() => { showRightView(true) }} />}
                 <div className='links-container'>
+                    <div className='link-buttons'>
+                        <IconTextButton icon={faSortAmountDown} text='Sort' />
+                        <IconTextButton className='filter-button' icon={faFilter} text='Filter' 
+                            onClick={() => { showRightView(true) }} />
+                    </div>
                     {linksTransition.map(({ item, props, key }, index) =>
                         <animated.div key={key} style={props} className='link-container'>
                             <div className='link-check-container'>
@@ -98,45 +77,17 @@ const LinksView = () => {
                                     setLinks(_links)
                                 }} />
                             </div>
-                            <LinkCard link={item} visibilityFilter={visibilityFilter} />
+                            <LinkCard link={item} visibilityFilter={visibilityFilters} />
                         </animated.div>
                     )}
                 </div>
                 <LinkActionBar />
             </div>
             <div className='right-view'>
-                <h2 className='filter-heading'>Search Filters</h2>
-                <div className='filter-group'>
-                    {searchFiltersTransition.map(({ item, props, key }) => {
-                        <animated.div key={key} style={props}>
-                            <div className='filter'>
-                                <div className='filter-properties'>
-                                    <div className='filter-name' >{item.name}</div>
-                                    <div>{item.value}</div>
-                                </div>
-                                <IconButton icon={faTimes} />
-                            </div>
-                        </animated.div>
-                    })}
-                </div>
-                <h2 className='filter-heading'>Visibility Filters</h2>
-                <div className='filter-group'>
-                    {visibilityFiltersTransition.map(({ item, props, key }) =>
-                        <animated.div key={key} style={props}>
-                            <div className='filter'>
-                                <span>{item}</span>
-                                {visibilityFilter.length > 1 && <IconButton icon={faTimes} onClick={() => {
-                                    const _visibilityFilter = visibilityFilter.filter(filter => filter !== item)
-                                    setVisibilityFilter(_visibilityFilter)
-                                }} />}
-                            </div>
-                        </animated.div>
-                    )}
-                    <IconButton className='filter-add' icon={faPlus}
-                        onClick={() => { showVisibilityFilterModal(true) }} />
-                </div>
+                <IconTextButton className='right-view-close' icon={faChevronLeft} text='Back' onClick={() => { showRightView(false) }} />
+                <FilterView searchFilters={searchFilters} setSearchFilters={setSearchFilters}
+                    visibilityFilters={visibilityFilters} setVisibilityFilters={setVisibilityFilters} />
             </div>
-            <VisibilityFilterModal shown={visibiltyFilterModalShown} show={showVisibilityFilterModal} />
         </div>
     )
 }
